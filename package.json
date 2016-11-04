@@ -42,6 +42,8 @@
   "dependencies": {
     "detect-indent": "^5.0.0",
     "gulp-util": "^3.0.7",
-    "through2": "^2.0.1"
+    "replace-ext": "^1.0.0",
+    "through2": "^2.0.1",
+    "traverse": "^0.6.6"
   }
 }
