@@ -28,8 +28,18 @@ function isSpecialValue(value) {
   return value === VSYM_SKIP;
 }
 
+/**
+ * zip two arrays
+ * @param {any[]} a1 - left array to zip
+ * @param {any[]} a2 - right array to zip
+ */
+function zip(a1, a2) {
+  return a1.map((e, i) => [e, a2[i]]);
+}
+
 export default {
   err,
+  zip,
   isSpecialKey,
   isSpecialValue,
 };

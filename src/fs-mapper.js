@@ -1,4 +1,4 @@
-import {err, isSpecialKey, isSpecialValue} from './util.js';
+import {err, zip, isSpecialKey, isSpecialValue} from './util.js';
 import traverse from 'traverse';
 
 export default class FsMapper {
@@ -54,43 +54,39 @@ export default class FsMapper {
    * @return {Map<string, any>} mapping definition (path => value)
    */
   match(src, ignoreUnmatch) {
-    const that = this;
     const travSrc = traverse(src);
 
-    /**
-     * @this context
-     */
-    function nodeToFile(v) {
-      if (!travSrc.has(this.path)) {
+    const nodeToFile = ([path, node]) => {
+      if (!travSrc.has(path)) {
         if (ignoreUnmatch) {
           return null;
-        } else if (!isSpecialKey(this.path) && !isSpecialValue(v)) {
-          throw err(`Failed to match template (path "${this.path}" is not found)`);
+        } else if (!isSpecialKey(path) && !isSpecialValue(node)) {
+          throw err(`Failed to match template (path "${path}" is not found)`);
         }
       }
-      if (typeof v !== 'string') {
+      if (typeof node !== 'string') {
         return null; // nothing to do with Object and Array
       }
 
-      const filePath = v;
-      if (isSpecialValue(v)) {
+      const filePath = node;
+      if (isSpecialValue(node)) {
         // TODO: resolve special names
+        return null;
       }
 
-      let target;
-      if (isSpecialKey(this.path)) {
-        target = that._getUnmapped(travSrc, this.parent.path);
+      let fileContent;
+      if (isSpecialKey(path)) {
+        fileContent = this._getUnmapped(travSrc, path.slice(0, -1));
       } else {
-        target = travSrc.get(this.path);
+        fileContent = travSrc.get(path);
       }
 
-      return [filePath, target];
-    }
+      return [filePath, fileContent];
+    };
 
-    const keyValues = this.travTemplate.map(nodeToFile)
-                                       .nodes()
-                                       .filter((a) => Array.isArray(a) &&
-                                                      typeof a[0] === 'string');
+    const keyValues = zip(this.travTemplate.paths(),
+                          this.travTemplate.nodes()).map(nodeToFile)
+                                                    .filter((e) => e);
     return new Map(keyValues);
   }
 
