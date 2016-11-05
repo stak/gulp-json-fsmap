@@ -178,6 +178,8 @@ export default function gulpJsonFsMap(template, options) {
 
     try {
       const json = file.contents.toString('utf8');
+      const indent = detectIndent(json); // keep original indent style
+      const stringifyWithIndent = (obj) => JSON.stringify(obj, null, indent.indent);
       const fsmap = match(traversedTemplate,
                           traverse(JSON.parse(json)));
 
@@ -187,7 +189,7 @@ export default function gulpJsonFsMap(template, options) {
           base: file.base,
           cwd: file.cwd,
           path: path.join(file.base, replaceExt(relativePath, '.json')),
-          contents: new Buffer(JSON.stringify(v)), // TODO: detectIndent
+          contents: new Buffer(stringifyWithIndent(v)),
         }));
       }
     } catch (e) {
