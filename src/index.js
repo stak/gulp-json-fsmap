@@ -101,10 +101,11 @@ function getUnmapped(travSrc, parentPath, paths) {
  * @access private
  * @param {Traverse} travTemplate - specify traversd template to define mapping
  * @param {Traverse} travSrc - specify traversed source object to map
+ * @param {boolean} ignoreUnmatch - specify true to ignore matching error
  * @throws {PluginError} throw gutil.PluginError, expecting to catch and emit error event
  * @return {Map<string, any>} mapping definition (path => value)
  */
-function match(travTemplate, travSrc) {
+function match(travTemplate, travSrc, ignoreUnmatch) {
   const fsmap = new Map();
   const templatePaths = travTemplate.paths();
 
@@ -113,7 +114,9 @@ function match(travTemplate, travSrc) {
    */
   function m(v) {
     if (!travSrc.has(this.path)) {
-      if (!isSpecialKey(this.path) && !isSpecialValue(v)) {
+      if (ignoreUnmatch) {
+        return;
+      } else if (!isSpecialKey(this.path) && !isSpecialValue(v)) {
         throw err(`Failed to match template (path "${this.path}" is not found)`);
       }
     }
@@ -144,11 +147,17 @@ function match(travTemplate, travSrc) {
  * gulp plugin main function
  * @access public
  * @param {object|string} template - specify template to define mapping
- * @param {?object} options - specify option to configure the plugin
+ * @param {string|number} [indent=null] - specify indent style of output json
+ * @param {boolean} [mkdir=false] - specify true to make parent directory
+ * @param {boolean} [ignoreUnmatch=false] - specify true to ignore error in matching
  * @throws {PluginError} throw gutil.PluginError only when called with invalid parameters
  * @return {Transform} stream in object mode to handle vinyl File objects
  */
-export default function gulpJsonFsMap(template, options) {
+export default function gulpJsonFsMap(template, {
+  indent = null,
+  mkdir = false,
+  ignoreUnmatch = false,
+} = {}) {
   // input guards
   if (!template) {
     throw err('Missing template object');
@@ -178,17 +187,19 @@ export default function gulpJsonFsMap(template, options) {
 
     try {
       const json = file.contents.toString('utf8');
-      const indent = detectIndent(json); // keep original indent style
-      const stringifyWithIndent = (obj) => JSON.stringify(obj, null, indent.indent);
-      const fsmap = match(traversedTemplate,
-                          traverse(JSON.parse(json)));
+      const indentStr = indent !== null ?
+                        indent :
+                        detectIndent(json).indent; // keep original indent style
+      const stringifyWithIndent = (obj) => JSON.stringify(obj, null, indentStr);
+      const dirName = mkdir ? replaceExt(path.basename(file.path), '') : '';
 
+      const fsmap = match(traversedTemplate,
+                          traverse(JSON.parse(json)), ignoreUnmatch);
       for (const [relativePath, v] of fsmap) {
-        // TODO: configure f.base and f.cwd with specified option
         this.push(new File({
           base: file.base,
           cwd: file.cwd,
-          path: path.join(file.base, replaceExt(relativePath, '.json')),
+          path: path.join(file.base, dirName, replaceExt(relativePath, '.json')),
           contents: new Buffer(stringifyWithIndent(v)),
         }));
       }
