@@ -25,24 +25,16 @@ export default class FsMapper {
    * @return {boolean} if true, template is valid
    */
   _validate(template) {
-    const used = {};
+    const nodes = traverse(template).nodes();
 
-    let result = true;
-    traverse(template).forEach((x) => {
-      const t = typeof x;
-      if (t !== 'object' && t !== 'string') {
-        result = false;
-      }
-      if (t === 'string') {
-        if (x in used) {
-          result = false;   // output file names conflict
-        } else if (!isSpecialValue(x)) {
-          used[x] = x;
-        }
-      }
-    });
-
-    return result;
+    const isValidType = nodes.every((node) => typeof node === 'object' ||
+                                              typeof node === 'string');
+    const isUnique = nodes.filter((node) => typeof node === 'string')
+                          .sort()
+                          .every((str, i, a) => i === a.length - 1 ||
+                                                str !== a[i + 1] ||
+                                                isSpecialValue(str));
+    return isValidType && isUnique;
   }
 
   /**
