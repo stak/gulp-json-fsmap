@@ -8,7 +8,6 @@ import {err} from './util';
 
 /**
  * gulp plugin main function
- * @access public
  * @param {object|string} template - specify template to define mapping
  * @param {string|number} [indent=null] - specify indent style of output json
  * @param {boolean} [mkdir=false] - specify true to make parent directory
@@ -25,7 +24,6 @@ export default function gulpJsonFsMap(template, {
 
   /**
    * handler for each File
-   * @access private
    * @param {File} file - File object to handle
    * @param {string} enc - encoding, but it is ignored if file contains a Buffer
    * @param {function(Error, File)} done - callback function
