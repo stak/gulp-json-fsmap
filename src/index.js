@@ -8,7 +8,7 @@ import detectIndent from 'detect-indent';
 // utils
 const File = gutil.File;
 const PLUGIN_NAME = 'gulp-json-fsmap';
-const err = msg => new gutil.PluginError(PLUGIN_NAME, msg);
+const err = (msg) => new gutil.PluginError(PLUGIN_NAME, msg);
 
 // tokens
 const VSYM_SKIP = '';
@@ -47,14 +47,14 @@ function validateTemplate(template) {
   const used = {};
 
   let result = true;
-  traverse(template).forEach(x => {
+  traverse(template).forEach((x) => {
     const t = typeof x;
     if (t !== 'object' && t !== 'string') {
       result = false;
     }
     if (t === 'string') {
       if (x in used) {
-        result = false;
+        result = false;   // output file names conflict
       } else if (!isSpecialValue(x)) {
         used[x] = x;
       }
@@ -65,7 +65,39 @@ function validateTemplate(template) {
 }
 
 /**
- * match template with src and return json files mapped
+ * get the element at specified path, excluding paths map to other file
+ * @access private
+ * @param {Traverse} travSrc - specify traversed source object to map
+ * @param {string[]} parentPath - specify array of string keys from the root to the target node
+ * @param {string[][]} paths - specify all paths defined in template
+ * @return {object} the element excluded mapped values
+ */
+function getUnmapped(travSrc, parentPath, paths) {
+  const parent = travSrc.get(parentPath);
+  const copy = Object.assign({}, parent);
+
+  function nextOfParent(p) {
+    // parent: ["path", "to", "parent"]
+    // p:      ["path", "to", "parent", "next"]
+    // => then return "next"
+    if (p.length === parentPath.length + 1 &&
+        p.every((e, i) => e === parentPath[i] || i === p.length - 1)) {
+      return p[p.length - 1];
+    } else {
+      return null;
+    }
+  }
+
+  // remove mapped values
+  paths.map(nextOfParent)
+       .filter((key) => key && !isSpecialKey(key))
+       .forEach((mappedKey) => delete copy[mappedKey]);
+
+  return copy;
+}
+
+/**
+ * match template with src and return mapping definition
  * @access private
  * @param {Traverse} travTemplate - specify traversd template to define mapping
  * @param {Traverse} travSrc - specify traversed source object to map
@@ -74,6 +106,7 @@ function validateTemplate(template) {
  */
 function match(travTemplate, travSrc) {
   const fsmap = new Map();
+  const templatePaths = travTemplate.paths();
 
   /**
    * @this context
@@ -84,22 +117,26 @@ function match(travTemplate, travSrc) {
         throw err(`Failed to match template (path "${this.path}" is not found)`);
       }
     }
-
-    if (typeof v === 'string') {
-      if (isSpecialValue(v)) {
-        // TODO: resolve special tokens
-      } else {
-        const filePath = v;
-        const target = travSrc.get(isSpecialKey(this.path) ?
-                                  this.path.slice(0, -1) :
-                                  this.path);
-        fsmap.set(filePath, target);
-      }
+    if (typeof v !== 'string') {
+      return; // nothing to do with Object and Array
     }
+
+    const filePath = v;
+    if (isSpecialValue(v)) {
+      // TODO: resolve special names
+    }
+
+    let target;
+    if (isSpecialKey(this.path)) {
+      target = getUnmapped(travSrc, this.parent.path, templatePaths);
+    } else {
+      target = travSrc.get(this.path);
+    }
+
+    fsmap.set(filePath, target);
   }
 
   travTemplate.forEach(m);
-
   return fsmap;
 }
 
@@ -115,8 +152,6 @@ export default function gulpJsonFsMap(template, options) {
   // input guards
   if (!template) {
     throw err('Missing template object');
-  } else if (typeof template !== 'object') {
-    throw err('Specified template is not object');
   } else if (!validateTemplate(template)) {
     throw err('Specified template is invalid');
   }
