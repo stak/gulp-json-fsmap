@@ -119,6 +119,4 @@ export default class FsMapper {
                              .forEach((mappedKey) => delete copy[mappedKey]);
     return copy;
   }
-
-
 }
