@@ -1,39 +1,20 @@
 import gutil from 'gulp-util';
-// tokens
-const VSYM_SKIP = '';
-const VSYM_UNDEF = undefined;
-const KSYM_ALL = '_';
-
-// error
 const PLUGIN_NAME = 'gulp-json-fsmap';
-const err = (msg) => new gutil.PluginError(PLUGIN_NAME, msg);
 
 /**
- * check if key string is special token
- * @param {string|string[]} key - key string of template object
- * @return {boolean} if true, key is special
+ * shorthand to make PluginError
+ * @param {string} msg - error details
+ * @return {PluginError} gulp style Error
  */
-function isSpecialKey(key) {
-  const keyArray = Array.isArray(key) ? key : [key];
-  const last = keyArray[keyArray.length - 1];
-
-  return last === KSYM_ALL;
-}
-
-/**
- * check if value string is special tokenA
- * @param {string} value - value string of template object
- * @return {boolean} if true, value is special
- */
-function isSpecialValue(value) {
-  return value === VSYM_SKIP ||
-         value === VSYM_UNDEF;
+function err(msg) {
+  return new gutil.PluginError(PLUGIN_NAME, msg);
 }
 
 /**
  * zip two arrays
  * @param {any[]} a1 - left array to zip
  * @param {any[]} a2 - right array to zip
+ * @return {any[][]} zipped array
  */
 function zip(a1, a2) {
   return a1.map((e, i) => [e, a2[i]]);
@@ -42,6 +23,4 @@ function zip(a1, a2) {
 export default {
   err,
   zip,
-  isSpecialKey,
-  isSpecialValue,
 };

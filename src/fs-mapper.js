@@ -1,5 +1,7 @@
-import {err, zip, isSpecialKey, isSpecialValue} from './util.js';
 import traverse from 'traverse';
+import {err, zip} from './util.js';
+import kToken from './key-token';
+import vToken from './value-token';
 
 export default class FsMapper {
   /**
@@ -31,10 +33,11 @@ export default class FsMapper {
     const isValidType = nodes.map((node) => typeof node)
                              .every((type) => validTypes.indexOf(type) >= 0);
     const isUnique = nodes.filter((node) => typeof node === 'string')
+                          .map((str) => vToken(str).plain)
+                          .filter((str) => Boolean(str))
                           .sort()
                           .every((str, i, a) => i === a.length - 1 ||
-                                                str !== a[i + 1] ||
-                                                isSpecialValue(str));
+                                                str !== a[i + 1]);
     return isValidType && isUnique;
   }
 
@@ -53,7 +56,7 @@ export default class FsMapper {
       if (!travSrc.has(path)) {
         if (ignoreUnmatch) {
           return null;
-        } else if (!isSpecialKey(path) && !isSpecialValue(node)) {
+        } else if (!kToken(path).isMeta && !vToken(node).isMeta) {
           throw err(`Failed to match template (path "${path}" is not found)`);
         }
       }
@@ -62,13 +65,13 @@ export default class FsMapper {
       }
 
       const filePath = node;
-      if (isSpecialValue(node)) {
+      if (vToken(node).isMeta) {
         // TODO: resolve special names
         return null;
       }
 
       let fileContent;
-      if (isSpecialKey(path)) {
+      if (kToken(path).isRest) {
         fileContent = this._getUnmapped(travSrc, path.slice(0, -1));
       } else {
         fileContent = travSrc.get(path);
@@ -79,7 +82,7 @@ export default class FsMapper {
 
     const keyValues = zip(this.travTemplate.paths(),
                           this.travTemplate.nodes()).map(nodeToFile)
-                                                    .filter((e) => e);
+                                                    .filter((e) => Boolean(e));
     return new Map(keyValues);
   }
 
@@ -108,7 +111,7 @@ export default class FsMapper {
 
     // remove mapped values
     this.travTemplate.paths().map(nextOfParent)
-                             .filter((key) => key && !isSpecialKey(key))
+                             .filter((key) => key && !kToken(key).isMeta)
                              .forEach((mappedKey) => delete copy[mappedKey]);
     return copy;
   }
