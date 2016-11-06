@@ -28,7 +28,8 @@ export default class FsMapper {
     const nodes = traverse(template).nodes();
 
     const isValidType = nodes.every((node) => typeof node === 'object' ||
-                                              typeof node === 'string');
+                                              typeof node === 'string' ||
+                                              typeof node === 'undefined');
     const isUnique = nodes.filter((node) => typeof node === 'string')
                           .sort()
                           .every((str, i, a) => i === a.length - 1 ||

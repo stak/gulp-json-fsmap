@@ -1,6 +1,7 @@
 import gutil from 'gulp-util';
 // tokens
 const VSYM_SKIP = '';
+const VSYM_UNDEF = undefined;
 const KSYM_ALL = '_';
 
 // error
@@ -25,7 +26,8 @@ function isSpecialKey(key) {
  * @return {boolean} if true, value is special
  */
 function isSpecialValue(value) {
-  return value === VSYM_SKIP;
+  return value === VSYM_SKIP ||
+         value === VSYM_UNDEF;
 }
 
 /**
