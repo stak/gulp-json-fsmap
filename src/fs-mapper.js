@@ -26,10 +26,10 @@ export default class FsMapper {
    */
   _validate(template) {
     const nodes = traverse(template).nodes();
+    const validTypes = ['object', 'string', 'undefined'];
 
-    const isValidType = nodes.every((node) => typeof node === 'object' ||
-                                              typeof node === 'string' ||
-                                              typeof node === 'undefined');
+    const isValidType = nodes.map((node) => typeof node)
+                             .every((type) => validTypes.indexOf(type) >= 0);
     const isUnique = nodes.filter((node) => typeof node === 'string')
                           .sort()
                           .every((str, i, a) => i === a.length - 1 ||
