@@ -14,6 +14,7 @@ const PluginError = gutil.PluginError;
 /**
  * gulp plugin main function
  * @param {object|string} template - specify template to define mapping
+ * @param {?string} [extension='json'] - specify extension to add
  * @param {string|number} [indent=null] - specify indent style of output json
  * @param {boolean} [mkdir=false] - specify true to make parent directory
  * @param {boolean} [ignoreUnmatch=false] - specify true to ignore error in matching
@@ -22,6 +23,7 @@ const PluginError = gutil.PluginError;
  * @return {Transform} stream in object mode to handle vinyl File objects
  */
 export default function gulpJsonFsMap(template, {
+  extension = 'json',
   indent = null,
   mkdir = false,
   ignoreUnmatch = false,
@@ -63,7 +65,7 @@ export default function gulpJsonFsMap(template, {
           cwd: file.cwd,
           path: path.join(file.base,
                           dirName,
-                          ext(relPath, '.json')),
+                          extension ? ext(relPath, `.${extension}`) : relPath),
           contents: new Buffer(stringifyWithIndent(v)),
         }));
       }
