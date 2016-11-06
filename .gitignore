@@ -38,6 +38,7 @@ jspm_packages
 
 # Generated files
 lib/
+.DS_Store
 
 # VSCode
 .vscode/
