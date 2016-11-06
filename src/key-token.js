@@ -11,8 +11,8 @@ export class KeyToken {
    * @param {string|string[]} keyOrPath - key or path array of template object
    */
   constructor(keyOrPath) {
-    const a = Array.isArray(keyOrPath) ? keyOrPath : [keyOrPath];
-    this._key = a[a.length - 1];
+    this._path = Array.isArray(keyOrPath) ? keyOrPath : [keyOrPath];
+    this._key = this._path[this._path.length - 1];
   }
 
   /**
@@ -23,11 +23,18 @@ export class KeyToken {
   }
 
   /**
+   * get the path
+   */
+  get path() {
+    return this._path.slice();
+  }
+
+  /**
    * check if the key is rest token
    * @access public
    * @return {boolean} if true, key is rest token
    */
-  get isRest() {
+  get isObjectRest() {
     return this._key === KSYM_REST;
   }
 
@@ -37,7 +44,7 @@ export class KeyToken {
    * @return {boolean} if true, key has meta token
    */
   get isMeta() {
-    return this.isRest;
+    return this.isObjectRest;
   }
 }
 

@@ -23,22 +23,40 @@ export class ValueToken {
    * @return {string} string value
    */
   get value() {
-    return this.isNull ? VSYM_EMPTY : this._value;
+    return (this.isNull || this.isObject) ?
+           VSYM_EMPTY :
+           this._value;
   }
 
   /**
-   * strip special tokens and return plain value
+   * strip meta tokens and return plain value
    * @access public
    * @return {string} stripped plain value
    */
   get plain() {
-    if (this.isNull) {
-      return VSYM_EMPTY;
-    } else if (this.isArrayRest) {
-      return this._value.slice(VSYM_ARRAY.length);
-    } else {
-      return this._value;
+    return this.isArrayRest ?
+           this._value.slice(VSYM_ARRAY.length) :
+           this.value;
+  }
+
+  /**
+   * resolve meta tokens and return resolved value
+   * @access public
+   * @param {any} contents - corresponding contents
+   * @param {Map<string, function(any):string>} replacers
+   * @return {string} resolved value
+   */
+  resolve(contents, replacers) {
+    /* TODO:
+    [["id", function(){}]]
+    for (const f of replacers) {
+      f(contents);
     }
+    */
+    if (replacers) {
+      replacers();
+    }
+    return this.plain;
   }
 
   /**
@@ -53,12 +71,22 @@ export class ValueToken {
   }
 
   /**
+   * check if the value is object
+   * @access public
+   * @return {boolean} if true, value is object
+   */
+  get isObject() {
+    return typeof this._value === 'object';
+  }
+
+  /**
    * check if the value has array-rest token
    * @access public
    * @return {boolean} if true, value has array-rest token
    */
   get isArrayRest() {
-    return this._value.startsWith(VSYM_ARRAY);
+    return typeof this._value === 'string' &&
+           this._value.startsWith(VSYM_ARRAY);
   }
 
   /**

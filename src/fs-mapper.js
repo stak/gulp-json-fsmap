@@ -52,36 +52,42 @@ export default class FsMapper {
   match(src, ignoreUnmatch) {
     const travSrc = traverse(src);
 
-    const nodeToFile = ([path, node]) => {
-      if (!travSrc.has(path)) {
+    const availableNode = ([pathToken, nodeToken]) => {
+      if (!travSrc.has(pathToken.path)) {
         if (ignoreUnmatch) {
-          return null;
-        } else if (!kToken(path).isMeta && !vToken(node).isMeta) {
-          throw err(`Failed to match template (path "${path}" is not found)`);
+          return false;
+        } else if (!pathToken.isMeta && !nodeToken.isMeta) {
+          throw err(`Failed to match template (path "${pathToken.path}" is not found)`);
         }
       }
-      if (typeof node !== 'string') {
-        return null; // nothing to do with Object and Array
+      if (!nodeToken.value) {
+        return false;
       }
+      return true;
+    };
 
-      const filePath = node;
-      if (vToken(node).isMeta) {
-        // TODO: resolve special names
-        return null;
-      }
+    const toFile = ([pathToken, nodeToken]) => {
+      const p = pathToken.path;
 
       let fileContent;
-      if (kToken(path).isRest) {
-        fileContent = this._getUnmapped(travSrc, path.slice(0, -1));
+      if (pathToken.isObjectRest) {
+        p.pop();
+        fileContent = this._getUnmapped(travSrc, p);
+      } else if (nodeToken.isArrayRest) {
+        const startIndex = p.pop();
+        fileContent = travSrc.get(p).slice(startIndex);
       } else {
-        fileContent = travSrc.get(path);
+        fileContent = travSrc.get(p);
       }
 
+      const filePath = nodeToken.resolve(fileContent);
       return [filePath, fileContent];
     };
 
     const keyValues = zip(this.travTemplate.paths(),
-                          this.travTemplate.nodes()).map(nodeToFile)
+                          this.travTemplate.nodes()).map(([k, v]) => [kToken(k), vToken(v)])
+                                                    .filter(availableNode)
+                                                    .map(toFile)
                                                     .filter((e) => Boolean(e));
     return new Map(keyValues);
   }
