@@ -29,34 +29,25 @@ export class ValueToken {
   }
 
   /**
-   * strip meta tokens and return plain value
+   * strip meta tokens and return name value
    * @access public
    * @return {string} stripped plain value
    */
-  get plain() {
+  get name() {
     return this.isArrayRest ?
-           this._value.slice(VSYM_ARRAY.length) :
+           this.value.slice(VSYM_ARRAY.length) :
            this.value;
   }
 
   /**
-   * resolve meta tokens and return resolved value
+   * strip meta tokens and return plain value
    * @access public
-   * @param {any} contents - corresponding contents
-   * @param {Map<string, function(any):string>} replacers
-   * @return {string} resolved value
+   * @return {string} stripped plain value
    */
-  resolve(contents, replacers) {
-    /* TODO:
-    [["id", function(){}]]
-    for (const f of replacers) {
-      f(contents);
-    }
-    */
-    if (replacers) {
-      replacers();
-    }
-    return this.plain;
+  get plainName() {
+    return this.isReplacer ?
+           VSYM_EMPTY :
+           this.name;
   }
 
   /**
@@ -90,11 +81,21 @@ export class ValueToken {
   }
 
   /**
-   * check if the value means something meta
+   * check if the value has replacer token
+   * @access public
+   * @return {boolean} if true, value has replacer token
+   */
+  get isReplacer() {
+    return typeof this._value === 'string' &&
+           (/\$\{[a-zA-Z_]+\}/).test(this._value);
+  }
+
+  /**
+   * check if the value can be skipped safely when match fails
    * @access public
    * @return {boolean} if true, value has meta token
    */
-  get isMeta() {
+  get canSkip() {
     return this.isNull || this.isArrayRest;
   }
 }

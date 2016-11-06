@@ -2,6 +2,7 @@ import traverse from 'traverse';
 import {err, zip} from './util.js';
 import kToken from './key-token';
 import vToken from './value-token';
+import resolveReplacer from './replacer';
 
 export default class FsMapper {
   /**
@@ -33,7 +34,7 @@ export default class FsMapper {
     const isValidType = nodes.map((node) => typeof node)
                              .every((type) => validTypes.indexOf(type) >= 0);
     const isUnique = nodes.filter((node) => typeof node === 'string')
-                          .map((str) => vToken(str).plain)
+                          .map((str) => vToken(str).plainName)
                           .filter((str) => Boolean(str))
                           .sort()
                           .every((str, i, a) => i === a.length - 1 ||
@@ -46,17 +47,18 @@ export default class FsMapper {
    * @access public
    * @param {any} src - specify source object (or primitive value) to map
    * @param {boolean} ignoreUnmatch - specify true to ignore matching error
+   * @param {object} replacer - specify replace functions by key-value object
    * @throws {PluginError} throw gutil.PluginError, expecting to catch and emit error event
    * @return {Map<string, any>} mapping definition (path => value)
    */
-  match(src, ignoreUnmatch) {
+  match(src, ignoreUnmatch, replacer) {
     const travSrc = traverse(src);
 
     const availableNode = ([pathToken, nodeToken]) => {
       if (!travSrc.has(pathToken.path)) {
         if (ignoreUnmatch) {
           return false;
-        } else if (!pathToken.isMeta && !nodeToken.isMeta) {
+        } else if (!pathToken.isMeta && !nodeToken.canSkip) {
           throw err(`Failed to match template (path "${pathToken.path}" is not found)`);
         }
       }
@@ -80,7 +82,9 @@ export default class FsMapper {
         fileContent = travSrc.get(p);
       }
 
-      const filePath = nodeToken.resolve(fileContent);
+      const filePath = resolveReplacer(nodeToken.name,
+                                       [fileContent, pathToken.path],
+                                       replacer);
       return [filePath, fileContent];
     };
 

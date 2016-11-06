@@ -17,6 +17,7 @@ const PluginError = gutil.PluginError;
  * @param {string|number} [indent=null] - specify indent style of output json
  * @param {boolean} [mkdir=false] - specify true to make parent directory
  * @param {boolean} [ignoreUnmatch=false] - specify true to ignore error in matching
+ * @param {object} [replacer={}] - specify replace functions by key-value object
  * @throws {PluginError} throw PluginError only when called with invalid parameters
  * @return {Transform} stream in object mode to handle vinyl File objects
  */
@@ -24,6 +25,7 @@ export default function gulpJsonFsMap(template, {
   indent = null,
   mkdir = false,
   ignoreUnmatch = false,
+  replacer = {},
 } = {}) {
   const mapper = new FsMapper(template);
 
@@ -54,7 +56,7 @@ export default function gulpJsonFsMap(template, {
       const stringifyWithIndent = (obj) => JSON.stringify(obj, null, indentStr);
 
       // core logic
-      const fsmap = mapper.match(JSON.parse(json), ignoreUnmatch);
+      const fsmap = mapper.match(JSON.parse(json), ignoreUnmatch, replacer);
       for (const [relPath, v] of fsmap) {
         this.push(new File({
           base: file.base,
