@@ -1,5 +1,6 @@
 // tokens
-const VSYM_ARRAY = '...';
+const VSYM_SPREAD = '...';
+const VSYM_ITERATE = '*';
 const VSYM_EMPTY = '';
 const VSYM_NULL = null;
 const VSYM_UNDEF = undefined;
@@ -34,9 +35,13 @@ export class ValueToken {
    * @return {string} stripped plain value
    */
   get name() {
-    return this.isArrayRest ?
-           this.value.slice(VSYM_ARRAY.length) :
-           this.value;
+    if (this.isArraySpread) {
+      return this.value.slice(VSYM_SPREAD.length);
+    } else if (this.isArrayIterate) {
+      return this.value.slice(VSYM_ITERATE.length);
+    } else {
+      return this.value;
+    }
   }
 
   /**
@@ -71,13 +76,23 @@ export class ValueToken {
   }
 
   /**
-   * check if the value has array-rest token
+   * check if the value has array spread token
    * @access public
-   * @return {boolean} if true, value has array-rest token
+   * @return {boolean} if true, value has array spread token
    */
-  get isArrayRest() {
+  get isArraySpread() {
     return typeof this._value === 'string' &&
-           this._value.startsWith(VSYM_ARRAY);
+           this._value.startsWith(VSYM_SPREAD);
+  }
+
+  /**
+   * check if the value has array iteratation token
+   * @access public
+   * @return {boolean} if true, value has array iteration token
+   */
+  get isArrayIterate() {
+    return typeof this._value === 'string' &&
+           this._value.startsWith(VSYM_ITERATE);
   }
 
   /**
@@ -96,7 +111,7 @@ export class ValueToken {
    * @return {boolean} if true, value has meta token
    */
   get canSkip() {
-    return this.isNull || this.isArrayRest;
+    return this.isNull || this.isArraySpread || this.isArrayIterate;
   }
 }
 

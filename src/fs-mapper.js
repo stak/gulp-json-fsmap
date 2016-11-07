@@ -71,28 +71,44 @@ export default class FsMapper {
     const toFile = ([pathToken, nodeToken]) => {
       const p = pathToken.path;
 
-      let fileContent;
-      if (pathToken.isObjectRest) {
-        p.pop();
-        fileContent = this._getUnmapped(travSrc, p);
-      } else if (nodeToken.isArrayRest) {
+      if (nodeToken.isArrayIterate) {
         const startIndex = p.pop();
-        fileContent = travSrc.get(p).slice(startIndex);
+        return travSrc.get(p).slice(startIndex).map((e, i) => {
+          const iteratePath = [...p, parseInt(startIndex, 10) + i];
+          const fileContent = travSrc.get(iteratePath);
+          const filePath = resolveReplacer(nodeToken.name,
+                                           [fileContent, iteratePath],
+                                           replacer);
+          return [filePath, fileContent];
+        });
       } else {
-        fileContent = travSrc.get(p);
-      }
+        let fileContent;
+        if (pathToken.isObjectRest) {
+          p.pop();
+          fileContent = this._getUnmapped(travSrc, p);
+        } else if (nodeToken.isArraySpread) {
+          const startIndex = p.pop();
+          fileContent = travSrc.get(p).slice(startIndex);
+        } else {
+          fileContent = travSrc.get(p);
+        }
 
-      const filePath = resolveReplacer(nodeToken.name,
-                                       [fileContent, pathToken.path],
-                                       replacer);
-      return [filePath, fileContent];
+        const filePath = resolveReplacer(nodeToken.name,
+                                        [fileContent, pathToken.path],
+                                        replacer);
+        return [filePath, fileContent];
+      }
     };
 
-    const keyValues = zip(this.travTemplate.paths(),
-                          this.travTemplate.nodes()).map(([k, v]) => [kToken(k), vToken(v)])
-                                                    .filter(availableNode)
-                                                    .map(toFile)
-                                                    .filter((e) => Boolean(e));
+    const flatten = (prev, next) => prev.concat(Array.isArray(next[0]) ?
+                                                next : [next]);
+
+    const keyValues = zip(this.travTemplate.paths(), this.travTemplate.nodes())
+                      .map(([k, v]) => [kToken(k), vToken(v)])
+                      .filter(availableNode)
+                      .map(toFile)
+                      .filter((e) => Boolean(e))
+                      .reduce(flatten, []);
     return new Map(keyValues);
   }
 
