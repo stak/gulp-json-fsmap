@@ -33,12 +33,14 @@ export default class FsMapper {
 
     const isValidType = nodes.map((node) => typeof node)
                              .every((type) => validTypes.indexOf(type) >= 0);
+    const differFromNext = (v, i, a) => i === a.length - 1 ||
+                                        v !== a[i + 1];
     const isUnique = nodes.filter((node) => typeof node === 'string')
                           .map((str) => vToken(str).plainName)
                           .filter((str) => Boolean(str))
                           .sort()
-                          .every((str, i, a) => i === a.length - 1 ||
-                                                str !== a[i + 1]);
+                          .every(differFromNext);
+
     return isValidType && isUnique;
   }
 
