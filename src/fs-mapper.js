@@ -59,7 +59,7 @@ export default class FsMapper {
     const availableNode = ([pathToken, nodeToken]) => {
       if (!travSrc.has(pathToken.path)) {
         if (!pathToken.isMeta && !nodeToken.canSkip) {
-          onError(`Failed to match template (path "${pathToken.path}" is not found)`);
+          onError(`Failed to match template (json["${pathToken.path.join('"]["')}"] is undefined)`);
           return false;
         }
       }
@@ -71,12 +71,21 @@ export default class FsMapper {
 
     const toFile = ([pathToken, nodeToken]) => {
       const p = pathToken.path;
+      const sliceParent = (childPath) => {
+        const childIndex = childPath.pop();
+        const parentArray = travSrc.get(childPath);
+        if (!Array.isArray(parentArray)) {
+          onError(`Failed to match template (typeof json["${pathToken.path.join('"]["')}"] is not Array)`);
+        }
+
+        return [parentArray.slice(childIndex), childIndex];
+      };
 
       if (nodeToken.isArrayIterate) {
-        const startIndex = p.pop();
-        return travSrc.get(p).slice(startIndex).map((e, i) => {
-          const iteratePath = [...p, parseInt(startIndex, 10) + i];
-          const fileContent = travSrc.get(iteratePath);
+        const [sliced, sliceIndex] = sliceParent(p);
+        return sliced.map((e, i) => {
+          const iteratePath = [...p, parseInt(sliceIndex, 10) + i];
+          const fileContent = e;
           const filePath = resolveReplacer(nodeToken.name,
                                            [fileContent, iteratePath],
                                            replacer);
@@ -88,8 +97,7 @@ export default class FsMapper {
           p.pop();
           fileContent = this._getUnmapped(travSrc, p);
         } else if (nodeToken.isArraySpread) {
-          const startIndex = p.pop();
-          fileContent = travSrc.get(p).slice(startIndex);
+          fileContent = sliceParent(p)[0];
         } else {
           fileContent = travSrc.get(p);
         }
