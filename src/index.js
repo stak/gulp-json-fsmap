@@ -49,24 +49,27 @@ export default function gulpJsonFsMap(template, {
 
     try {
       const json = file.contents.toString('utf8');
-      const dirName = mkdir ?
-                      ext(path.basename(file.path), '') :
-                      '';
       const indentStr = indent !== null ?
                         indent :
                         detectIndent(json).indent; // keep original indent style
-      const stringifyWithIndent = (obj) => JSON.stringify(obj, null, indentStr);
+      const stringify = (obj) => JSON.stringify(obj, null, indentStr);
+      const onError = (msg) => {
+        if (!ignoreUnmatch) {
+          throw err(msg);
+        }
+      };
 
       // core logic
-      const fsmap = mapper.match(JSON.parse(json), ignoreUnmatch, replacer);
-      for (const [relPath, v] of fsmap) {
+      const fsmap = mapper.match(JSON.parse(json), replacer, onError);
+      for (const [targetPath, contents] of fsmap) {
+        const dirName = mkdir ? ext(path.basename(file.path), '') : '';
+        const targetPathWithExt = extension ? ext(targetPath, `.${extension}`) : targetPath;
+
         this.push(new File({
           base: file.base,
           cwd: file.cwd,
-          path: path.join(file.base,
-                          dirName,
-                          extension ? ext(relPath, `.${extension}`) : relPath),
-          contents: new Buffer(stringifyWithIndent(v)),
+          path: path.join(file.base, dirName, targetPathWithExt),
+          contents: new Buffer(stringify(contents)),
         }));
       }
     } catch (e) {

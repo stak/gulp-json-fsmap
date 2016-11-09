@@ -48,20 +48,19 @@ export default class FsMapper {
    * match template with src and return mapping definition
    * @access public
    * @param {any} src - specify source object (or primitive value) to map
-   * @param {boolean} ignoreUnmatch - specify true to ignore matching error
    * @param {object} replacer - specify replace functions by key-value object
+   * @param {function(string)} onError - specify onError callback function
    * @throws {PluginError} throw gutil.PluginError, expecting to catch and emit error event
    * @return {Map<string, any>} mapping definition (path => value)
    */
-  match(src, ignoreUnmatch, replacer) {
+  match(src, replacer, onError) {
     const travSrc = traverse(src);
 
     const availableNode = ([pathToken, nodeToken]) => {
       if (!travSrc.has(pathToken.path)) {
-        if (ignoreUnmatch) {
+        if (!pathToken.isMeta && !nodeToken.canSkip) {
+          onError(`Failed to match template (path "${pathToken.path}" is not found)`);
           return false;
-        } else if (!pathToken.isMeta && !nodeToken.canSkip) {
-          throw err(`Failed to match template (path "${pathToken.path}" is not found)`);
         }
       }
       if (!nodeToken.value) {
