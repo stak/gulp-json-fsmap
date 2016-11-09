@@ -129,7 +129,8 @@ export default class FsMapper {
       // p:      ["path", "to", "parent", "next"]
       // => then return "next"
       if (p.length === parentPath.length + 1 &&
-          p.every((e, i) => e === parentPath[i] || i === p.length - 1)) {
+          p.every((e, i) =>
+            e === parentPath[i] || i === p.length - 1)) {
         return p[p.length - 1];
       } else {
         return null;
