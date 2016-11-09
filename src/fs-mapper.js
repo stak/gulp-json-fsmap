@@ -121,13 +121,10 @@ export default class FsMapper {
    * @return {object} the element excluded mapped values
    */
   _getUnmapped(travSrc, parentPath) {
-    const parent = travSrc.get(parentPath);
-    const copy = Object.assign({}, parent);
-
     function nextOfParent(p) {
       // parent: ["path", "to", "parent"]
       // p:      ["path", "to", "parent", "next"]
-      // => then return "next"
+      // => return "next"
       if (p.length === parentPath.length + 1 &&
           p.every((e, i) =>
             e === parentPath[i] || i === p.length - 1)) {
@@ -136,6 +133,9 @@ export default class FsMapper {
         return null;
       }
     }
+
+    const parent = travSrc.get(parentPath);
+    const copy = Object.assign({}, parent);
 
     // remove mapped values
     this.travTemplate.paths().map(nextOfParent)
