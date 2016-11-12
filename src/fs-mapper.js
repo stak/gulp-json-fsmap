@@ -83,7 +83,7 @@ export default class FsMapper {
     const toFile = ([pathToken, nodeToken]) => {
       const p = pathToken.path;
       const sliceParent = (childPath) => {
-        const childIndex = childPath.pop();
+        const childIndex = Number(childPath.pop());
         const parentArray = travSrc.get(childPath);
         if (!Array.isArray(parentArray)) {
           onError(`Failed to match template (typeof json["${pathToken.path.join('"]["')}"] is not Array)`);
@@ -95,7 +95,7 @@ export default class FsMapper {
       if (nodeToken.isArrayIterate) {
         const [sliced, sliceIndex] = sliceParent(p);
         return sliced.map((e, i) => {
-          const iteratePath = [...p, parseInt(sliceIndex, 10) + i];
+          const iteratePath = [...p, sliceIndex + i];
           const fileContent = e;
           const filePath = resolveReplacer(nodeToken.name,
                                            [fileContent, iteratePath],
