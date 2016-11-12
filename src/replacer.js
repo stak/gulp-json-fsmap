@@ -1,8 +1,8 @@
 const builtinReplacer = {
   i: (content, path) =>
     path[path.length - 1],
-  n: (context, path) =>
-    path[path.length - 1],
+  n: (context, path, iterationStart) =>
+    path[path.length - 1] - iterationStart,
 };
 
 /**

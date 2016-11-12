@@ -98,7 +98,7 @@ export default class FsMapper {
           const iteratePath = [...p, sliceIndex + i];
           const fileContent = e;
           const filePath = resolveReplacer(nodeToken.name,
-                                           [fileContent, iteratePath],
+                                           [fileContent, iteratePath, sliceIndex],
                                            replacer);
           return [filePath, fileContent];
         });
