@@ -57,9 +57,20 @@ export default class FsMapper {
     const travSrc = traverse(src);
 
     const availableNode = ([pathToken, nodeToken]) => {
-      if (!travSrc.has(pathToken.path)) {
+      const srcExists = travSrc.has(pathToken.path);
+
+      if (!srcExists) {
         if (!pathToken.isMeta && !nodeToken.canSkip) {
           onError(`Failed to match template (json["${pathToken.path.join('"]["')}"] is undefined)`);
+          return false;
+        }
+      } else if (pathToken.path.length > 0) {
+        const parentPath = pathToken.path.slice(0, -1);
+        const srcParent = travSrc.get(parentPath);
+        const templateParent = this.travTemplate.get(parentPath);
+        if (typeof srcParent !== typeof templateParent ||
+            Array.isArray(srcParent) !== Array.isArray(templateParent)) {
+          onError(`Failed to match template (typeof json["${parentPath.join('"]["')}"] is invalid)`);
           return false;
         }
       }
