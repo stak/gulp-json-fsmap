@@ -303,4 +303,44 @@ describe('gulp-json-fsmap', () => {
                  .end(wrap(src));
     });
   });
+
+  describe('array iteration syntax', () => {
+    it('captures the rest of Array elements', (done) => {
+      const src = [1, 2, 3, 4];
+      const tmpl = ['i0', 'i1', '*REST%{i}'];
+      const expected = {
+        i0: 1,
+        i1: 2,
+        REST2: 3,
+        REST3: 4,
+      };
+
+      fsmap(tmpl).on('data', collect)
+                 .on('end', expect(expected, done))
+                 .end(wrap(src));
+    });
+
+    it('captures nothing if no more element', (done) => {
+      const src = [1, 2];
+      const tmpl = ['i0', 'i1', '*REST%{i}'];
+      const expected = {
+        i0: 1,
+        i1: 2,
+      };
+
+      fsmap(tmpl).on('data', collect)
+                 .on('end', expect(expected, done))
+                 .end(wrap(src));
+    });
+
+    it('works with empty Array', (done) => {
+      const src = [];
+      const tmpl = ['*REST%{i}'];
+      const expected = {};
+
+      fsmap(tmpl).on('data', collect)
+                 .on('end', expect(expected, done))
+                 .end(wrap(src));
+    });
+  });
 });
