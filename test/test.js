@@ -437,4 +437,62 @@ describe('gulp-json-fsmap', () => {
                  .end(wrap(src));
     });
   });
+
+  describe('placeholder syntax', () => {
+    it('replaces %{i} with index', (done) => {
+      const src = [1, 2, 3];
+      const tmpl = ['index%{i}', 'index%{i}', 'index%{i}'];
+      const expected = {
+        index0: 1,
+        index1: 2,
+        index2: 3,
+      };
+
+      fsmap(tmpl).on('data', collect)
+                 .on('end', expect(expected, done))
+                 .end(wrap(src));
+    });
+
+    it('replaces %{n} with index in iteration', (done) => {
+      const src = [1, 2, 3];
+      const tmpl = ['head', '*rest%{n}'];
+      const expected = {
+        head: 1,
+        rest0: 2,
+        rest1: 3,
+      };
+
+      fsmap(tmpl).on('data', collect)
+                 .on('end', expect(expected, done))
+                 .end(wrap(src));
+    });
+
+    it('skips invalid placeholder', (done) => {
+      const src = [1, 2, 3];
+      const tmpl = ['head', '*rest%{skipme}'];
+      const expected = {
+        'head': 1,
+        'rest%{skipme}': 3,
+      };
+
+      fsmap(tmpl).on('data', collect)
+                 .on('end', expect(expected, done))
+                 .end(wrap(src));
+    });
+
+    it('replaces custom placeholder if specified', (done) => {
+      const src = [{id: 'a'}, {id: 'b'}, {id: 'c'}];
+      const tmpl = ['*%{twiceId}'];
+      const expected = {
+        aa: {id: 'a'},
+        bb: {id: 'b'},
+        cc: {id: 'c'},
+      };
+      const opts = {replacer: {twiceId: (obj) => obj.id + obj.id}};
+
+      fsmap(tmpl, opts).on('data', collect)
+                       .on('end', expect(expected, done))
+                       .end(wrap(src));
+    });
+  });
 });
