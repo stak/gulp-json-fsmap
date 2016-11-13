@@ -94,6 +94,9 @@ export default class FsMapper {
 
       if (nodeToken.isArrayIterate) {
         const [sliced, sliceIndex] = sliceParent(p);
+        if (!sliced.length) {
+          return null;  // nothing to iterate
+        }
         return sliced.map((e, i) => {
           const iteratePath = [...p, sliceIndex + i];
           const fileContent = e;
