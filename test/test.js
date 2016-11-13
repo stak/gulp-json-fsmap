@@ -4,19 +4,43 @@ const fsmap = require('../');
 const PLUGIN_NAME = 'gulp-json-fsmap';
 
 describe('gulp-json-fsmap', () => {
+  // container for mapped files
+  const m = new Map();
+  beforeEach(() => {
+    m.clear();
+  });
+
   // shorthands
-  function buffer(v) {
-    return new Buffer(JSON.stringify(v));
+  function wrap(src) {
+    return new File({
+      path: 'dir/test.json',
+      cwd: 'dir/',
+      base: 'dir/',
+      contents: new Buffer(JSON.stringify(src)),
+    });
   }
-  function json(v) {
-    return JSON.stringify(v);
+
+  function collect(newFile) {
+    assert(Boolean(newFile));
+    assert(Boolean(newFile.contents));
+    assert(newFile.cwd === 'dir/');
+    assert(newFile.base === 'dir/');
+
+    m.set(newFile.path, newFile.contents.toString());
   }
-  function assertFile(file, orig) {
-    assert(Boolean(file));
-    assert(Boolean(file.contents));
-    assert(file.cwd === orig.cwd);
-    assert(file.base === orig.base);
+
+  function expect(expected, cb) {
+    const keys = Object.keys(expected);
+
+    return () => {
+      assert(m.size === keys.length);
+      keys.forEach((k) =>
+        assert(m.get(`dir/${k}.json`) === JSON.stringify(expected[k])));
+
+      cb();
+    };
   }
+
   function expectPluginError(stream, done) {
     let reported = false;
     return stream.on('error', (err) => {
@@ -31,26 +55,16 @@ describe('gulp-json-fsmap', () => {
     });
   }
 
-  // container for mapped files
-  const m = new Map();
-  beforeEach(() => {
-    m.clear();
-  });
 
   describe('typeCheck', () => {
     it('works correctly on Object', (done) => {
-      const fakeFile = new File({
-        path: 'dir/object.json',
-        cwd: 'dir/',
-        base: 'dir/',
-        contents: buffer({
-          a: 1,
-          b: 10,
-          c: -20,
-          d: 999,
-          e: 0,
-        }),
-      });
+      const src = {
+        a: 1,
+        b: 10,
+        c: -20,
+        d: 999,
+        e: 0,
+      };
       const tmpl = {
         a: 'A',
         b: 'B',
@@ -58,395 +72,235 @@ describe('gulp-json-fsmap', () => {
         d: 'D',
         e: 'E',
       };
+      const expected = {
+        A: 1,
+        B: 10,
+        C: -20,
+        D: 999,
+        E: 0,
+      };
 
-      fsmap(tmpl).on('data', (newFile) => {
-        assertFile(newFile, fakeFile);
-        m.set(newFile.path, newFile.contents.toString());
-      }).on('end', () => {
-        assert(m.size === 5);
-        assert(m.get('dir/A.json') === json(1));
-        assert(m.get('dir/B.json') === json(10));
-        assert(m.get('dir/C.json') === json(-20));
-        assert(m.get('dir/D.json') === json(999));
-        assert(m.get('dir/E.json') === json(0));
-
-        done();
-      }).end(fakeFile);
+      fsmap(tmpl).on('data', collect)
+                 .on('end', expect(expected, done))
+                 .end(wrap(src));
     });
 
     it('works correctly on Array', (done) => {
-      const fakeFile = new File({
-        path: 'dir/array.json',
-        cwd: 'dir/',
-        base: 'dir/',
-        contents: buffer(['foo', 'bar', 'baz']),
-      });
+      const src = ['foo', 'bar', 'baz'];
       const tmpl = ['i0', 'i1', 'i2'];
+      const expected = {
+        i0: 'foo',
+        i1: 'bar',
+        i2: 'baz',
+      };
 
-      fsmap(tmpl).on('data', (newFile) => {
-        assertFile(newFile, fakeFile);
-        m.set(newFile.path, newFile.contents.toString());
-      }).on('end', () => {
-        assert(m.size === 3);
-        assert(m.get('dir/i0.json') === json('foo'));
-        assert(m.get('dir/i1.json') === json('bar'));
-        assert(m.get('dir/i2.json') === json('baz'));
-
-        done();
-      }).end(fakeFile);
+      fsmap(tmpl).on('data', collect)
+                 .on('end', expect(expected, done))
+                 .end(wrap(src));
     });
 
     it('works correctly on String', (done) => {
-      const fakeFile = new File({
-        path: 'dir/string.json',
-        cwd: 'dir/',
-        base: 'dir/',
-        contents: buffer('this is string'),
-      });
-      const tmpl = 'str';
+      const src = 'this is string';
+      const tmpl = 'result';
+      const expected = {result: 'this is string'};
 
-      fsmap(tmpl).on('data', (newFile) => {
-        assertFile(newFile, fakeFile);
-        m.set(newFile.path, newFile.contents.toString());
-      }).on('end', () => {
-        assert(m.size === 1);
-        assert(m.get('dir/str.json') === json('this is string'));
-
-        done();
-      }).end(fakeFile);
+      fsmap(tmpl).on('data', collect)
+                 .on('end', expect(expected, done))
+                 .end(wrap(src));
     });
 
     it('works correctly on Number', (done) => {
-      const fakeFile = new File({
-        path: 'dir/number.json',
-        cwd: 'dir/',
-        base: 'dir/',
-        contents: buffer(1234),
-      });
-      const tmpl = 'num';
+      const src = 1234;
+      const tmpl = 'result';
+      const expected = {result: 1234};
 
-      fsmap(tmpl).on('data', (newFile) => {
-        assertFile(newFile, fakeFile);
-        m.set(newFile.path, newFile.contents.toString());
-      }).on('end', () => {
-        assert(m.size === 1);
-        assert(m.get('dir/num.json') === json(1234));
-
-        done();
-      }).end(fakeFile);
+      fsmap(tmpl).on('data', collect)
+                 .on('end', expect(expected, done))
+                 .end(wrap(src));
     });
 
     it('works correctly on Boolean', (done) => {
-      const fakeFile = new File({
-        path: 'dir/boolean.json',
-        cwd: 'dir/',
-        base: 'dir/',
-        contents: buffer(true),
-      });
-      const tmpl = 'true';
+      const src = true;
+      const tmpl = 'result';
+      const expected = {result: true};
 
-      fsmap(tmpl).on('data', (newFile) => {
-        assertFile(newFile, fakeFile);
-        m.set(newFile.path, newFile.contents.toString());
-      }).on('end', () => {
-        assert(m.size === 1);
-        assert(m.get('dir/true.json') === json(true));
-
-        done();
-      }).end(fakeFile);
+      fsmap(tmpl).on('data', collect)
+                 .on('end', expect(expected, done))
+                 .end(wrap(src));
     });
 
     it('works correctly on null', (done) => {
-      const fakeFile = new File({
-        path: 'dir/null.json',
-        cwd: 'dir/',
-        base: 'dir/',
-        contents: buffer(null),
-      });
-      const tmpl = 'null';
+      const src = null;
+      const tmpl = 'result';
+      const expected = {result: null};
 
-      fsmap(tmpl).on('data', (newFile) => {
-        assertFile(newFile, fakeFile);
-        m.set(newFile.path, newFile.contents.toString());
-      }).on('end', () => {
-        assert(m.size === 1);
-        assert(m.get('dir/null.json') === json(null));
-
-        done();
-      }).end(fakeFile);
+      fsmap(tmpl).on('data', collect)
+                 .on('end', expect(expected, done))
+                 .end(wrap(src));
     });
 
     it('throws PluginError when find template type mismatch (number, [])', (done) => {
-      const fakeFile = new File({
-        path: 'dir/number.json',
-        cwd: 'dir/',
-        base: 'dir/',
-        contents: buffer(1234),
-      });
       const tmpl = ['tmpl', 'expect', 'array'];
-
-      expectPluginError(fsmap(tmpl), done).end(fakeFile);
+      expectPluginError(fsmap(tmpl), done).end(wrap(1234));
     });
 
     it('throws PluginError when find template type mismatch (string, [])', (done) => {
-      const fakeFile = new File({
-        path: 'dir/string.json',
-        cwd: 'dir/',
-        base: 'dir/',
-        contents: buffer('this is string'),
-      });
       const tmpl = ['tmpl', 'expect', 'array'];
-
-      expectPluginError(fsmap(tmpl), done).end(fakeFile);
+      expectPluginError(fsmap(tmpl), done).end(wrap('str'));
     });
 
     it('throws PluginError when find template type mismatch (boolean, [])', (done) => {
-      const fakeFile = new File({
-        path: 'dir/boolean.json',
-        cwd: 'dir/',
-        base: 'dir/',
-        contents: buffer(true),
-      });
       const tmpl = ['tmpl', 'expect', 'array'];
-
-      expectPluginError(fsmap(tmpl), done).end(fakeFile);
+      let c = 0;
+      const countDone = () => (++c === 2 && done());
+      expectPluginError(fsmap(tmpl), countDone).end(wrap(true));
+      expectPluginError(fsmap(tmpl), countDone).end(wrap(false));
     });
 
     it('throws PluginError when find template type mismatch (null, [])', (done) => {
-      const fakeFile = new File({
-        path: 'dir/null.json',
-        cwd: 'dir/',
-        base: 'dir/',
-        contents: buffer(null),
-      });
       const tmpl = ['tmpl', 'expect', 'array'];
-
-      expectPluginError(fsmap(tmpl), done).end(fakeFile);
+      expectPluginError(fsmap(tmpl), done).end(wrap(null));
     });
 
     it('throws PluginError when find template type mismatch ({}, [])', (done) => {
-      const fakeFile = new File({
-        path: 'dir/object.json',
-        cwd: 'dir/',
-        base: 'dir/',
-        contents: buffer({
-          a: 'a',
-          0: '0',
-          1: '1',
-          2: '2',
-        }),
-      });
-      const tmpl = ['tmpl', 'expect', 'array'];
-
-      expectPluginError(fsmap(tmpl), done).end(fakeFile);
+      const src = {
+        a: 'a',
+        0: '0',
+        1: '1',
+        2: '2',
+      };
+      const tmpl = ['template', 'expect', 'array'];
+      expectPluginError(fsmap(tmpl), done).end(wrap(src));
     });
 
     it('throws PluginError when find template type mismatch (number, {})', (done) => {
-      const fakeFile = new File({
-        path: 'dir/number.json',
-        cwd: 'dir/',
-        base: 'dir/',
-        contents: buffer(1234),
-      });
-      const tmpl = {tmpl: 'expect_object'};
-      expectPluginError(fsmap(tmpl), done).end(fakeFile);
+      const tmpl = {0: 'expect_object'};
+      expectPluginError(fsmap(tmpl), done).end(wrap(1234));
     });
 
     it('throws PluginError when find template type mismatch (string, {})', (done) => {
-      const fakeFile = new File({
-        path: 'dir/string.json',
-        cwd: 'dir/',
-        base: 'dir/',
-        contents: buffer('this is string'),
-      });
       const tmpl = {0: 'expect_object'};
-      expectPluginError(fsmap(tmpl), done).end(fakeFile);
+      expectPluginError(fsmap(tmpl), done).end(wrap('str'));
     });
 
     it('throws PluginError when find template type mismatch (boolean, {})', (done) => {
-      const fakeFile = new File({
-        path: 'dir/boolean.json',
-        cwd: 'dir/',
-        base: 'dir/',
-        contents: buffer(true),
-      });
-      const tmpl = {tmpl: 'expect_object'};
-      expectPluginError(fsmap(tmpl), done).end(fakeFile);
+      const tmpl = {0: 'expect_object'};
+      let c = 0;
+      const countDone = () => (++c === 2 && done());
+      expectPluginError(fsmap(tmpl), countDone).end(wrap(true));
+      expectPluginError(fsmap(tmpl), countDone).end(wrap(false));
     });
 
     it('throws PluginError when find template type mismatch (null, {})', (done) => {
-      const fakeFile = new File({
-        path: 'dir/null.json',
-        cwd: 'dir/',
-        base: 'dir/',
-        contents: buffer(null),
-      });
-      const tmpl = {tmpl: 'expect_object'};
-      expectPluginError(fsmap(tmpl), done).end(fakeFile);
+      const tmpl = {0: 'expect_object'};
+      expectPluginError(fsmap(tmpl), done).end(wrap(null));
     });
 
     it('throw PluginError when find template type mismatch ([], {})', (done) => {
-      const fakeFile = new File({
-        path: 'dir/array.json',
-        cwd: 'dir/',
-        base: 'dir/',
-        contents: buffer([1, 2, 3]),
-      });
+      const src = [1, 2, 3];
       const tmpl = {0: 'expect_object'};
-      expectPluginError(fsmap(tmpl), done).end(fakeFile);
+      expectPluginError(fsmap(tmpl), done).end(wrap(src));
     });
   });
 
   describe('rest key syntax', () => {
     it('captures all keys which is not specified explicitly', (done) => {
-      const fakeFile = new File({
-        path: 'dir/object.json',
-        cwd: 'dir/',
-        base: 'dir/',
-        contents: buffer({
-          a: 1,
-          b: 10,
-          c: -20,
-          d: 999,
-          e: 0,
-        }),
-      });
+      const src = {
+        a: 1,
+        b: 10,
+        c: -20,
+        d: 999,
+        e: 0,
+      };
       const tmpl = {
         a: 'A',
         e: 'E',
         _: 'REST',
       };
-
-      fsmap(tmpl).on('data', (newFile) => {
-        assertFile(newFile, fakeFile);
-        m.set(newFile.path, newFile.contents.toString());
-      }).on('end', () => {
-        assert(m.size === 3);
-        assert(m.get('dir/A.json') === json(1));
-        assert(m.get('dir/E.json') === json(0));
-        assert(m.get('dir/REST.json') === json({
+      const expected = {
+        A: 1,
+        E: 0,
+        REST: {
           b: 10,
           c: -20,
           d: 999,
-        }));
+        },
+      };
 
-        done();
-      }).end(fakeFile);
+      fsmap(tmpl).on('data', collect)
+                 .on('end', expect(expected, done))
+                 .end(wrap(src));
     });
 
     it('captures empty object if all keys are specified explicitly', (done) => {
-      const fakeFile = new File({
-        path: 'dir/object.json',
-        cwd: 'dir/',
-        base: 'dir/',
-        contents: buffer({
-          a: 1,
-          b: 10,
-        }),
-      });
+      const src = {
+        a: 1,
+        b: 10,
+      };
       const tmpl = {
         a: 'A',
         b: 'B',
         _: 'REST',
       };
+      const expected = {
+        A: 1,
+        B: 10,
+        REST: {},
+      };
 
-      fsmap(tmpl).on('data', (newFile) => {
-        assertFile(newFile, fakeFile);
-        m.set(newFile.path, newFile.contents.toString());
-      }).on('end', () => {
-        assert(m.size === 3);
-        assert(m.get('dir/A.json') === json(1));
-        assert(m.get('dir/B.json') === json(10));
-        assert(m.get('dir/REST.json') === json({}));
-
-        done();
-      }).end(fakeFile);
+      fsmap(tmpl).on('data', collect)
+                 .on('end', expect(expected, done))
+                 .end(wrap(src));
     });
 
     it('works with empty object', (done) => {
-      const fakeFile = new File({
-        path: 'dir/empty.json',
-        cwd: 'dir/',
-        base: 'dir/',
-        contents: buffer({}),
-      });
+      const src = {};
       const tmpl = {_: 'REST'};
+      const expected = {REST: {}};
 
-      fsmap(tmpl).on('data', (newFile) => {
-        assertFile(newFile, fakeFile);
-        m.set(newFile.path, newFile.contents.toString());
-      }).on('end', () => {
-        assert(m.size === 1);
-        assert(m.get('dir/REST.json') === json({}));
-
-        done();
-      }).end(fakeFile);
+      fsmap(tmpl).on('data', collect)
+                 .on('end', expect(expected, done))
+                 .end(wrap(src));
     });
   });
 
   describe('array spread syntax', () => {
     it('captures the rest of Array elements', (done) => {
-      const fakeFile = new File({
-        path: 'dir/array.json',
-        cwd: 'dir/',
-        base: 'dir/',
-        contents: buffer([1, 2, 3, 4]),
-      });
+      const src = [1, 2, 3, 4];
       const tmpl = ['i0', 'i1', '...REST'];
+      const expected = {
+        i0: 1,
+        i1: 2,
+        REST: [3, 4],
+      };
 
-      fsmap(tmpl).on('data', (newFile) => {
-        assertFile(newFile, fakeFile);
-        m.set(newFile.path, newFile.contents.toString());
-      }).on('end', () => {
-        assert(m.size === 3);
-        assert(m.get('dir/i0.json') === json(1));
-        assert(m.get('dir/i1.json') === json(2));
-        assert(m.get('dir/REST.json') === json([3, 4]));
-
-        done();
-      }).end(fakeFile);
+      fsmap(tmpl).on('data', collect)
+                 .on('end', expect(expected, done))
+                 .end(wrap(src));
     });
 
-    it('captures empty Array if there is no element', (done) => {
-      const fakeFile = new File({
-        path: 'dir/array.json',
-        cwd: 'dir/',
-        base: 'dir/',
-        contents: buffer([1, 2]),
-      });
+    it('captures empty Array if no more element', (done) => {
+      const src = [1, 2];
       const tmpl = ['i0', 'i1', '...REST'];
+      const expected = {
+        i0: 1,
+        i1: 2,
+        REST: [],
+      };
 
-      fsmap(tmpl).on('data', (newFile) => {
-        assertFile(newFile, fakeFile);
-        m.set(newFile.path, newFile.contents.toString());
-      }).on('end', () => {
-        assert(m.size === 3);
-        assert(m.get('dir/i0.json') === json(1));
-        assert(m.get('dir/i1.json') === json(2));
-        assert(m.get('dir/REST.json') === json([]));
-
-        done();
-      }).end(fakeFile);
+      fsmap(tmpl).on('data', collect)
+                 .on('end', expect(expected, done))
+                 .end(wrap(src));
     });
 
     it('works with empty Array', (done) => {
-      const fakeFile = new File({
-        path: 'dir/emptyArray.json',
-        cwd: 'dir/',
-        base: 'dir/',
-        contents: buffer([]),
-      });
+      const src = [];
       const tmpl = ['...REST'];
+      const expected = {REST: []};
 
-      fsmap(tmpl).on('data', (newFile) => {
-        assertFile(newFile, fakeFile);
-        m.set(newFile.path, newFile.contents.toString());
-      }).on('end', () => {
-        assert(m.size === 1);
-        assert(m.get('dir/REST.json') === json([]));
-
-        done();
-      }).end(fakeFile);
+      fsmap(tmpl).on('data', collect)
+                 .on('end', expect(expected, done))
+                 .end(wrap(src));
     });
   });
 });
