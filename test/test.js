@@ -37,7 +37,7 @@ describe('gulp-json-fsmap', () => {
     m.clear();
   });
 
-  describe('types', () => {
+  describe('typeCheck', () => {
     it('works correctly on Object', (done) => {
       const fakeFile = new File({
         path: 'dir/object.json',
@@ -176,7 +176,7 @@ describe('gulp-json-fsmap', () => {
       }).end(fakeFile);
     });
 
-    it('throw PluginError when find template type mismatch (number, [])', (done) => {
+    it('throws PluginError when find template type mismatch (number, [])', (done) => {
       const fakeFile = new File({
         path: 'dir/number.json',
         cwd: 'dir/',
@@ -188,7 +188,7 @@ describe('gulp-json-fsmap', () => {
       expectPluginError(fsmap(tmpl), done).end(fakeFile);
     });
 
-    it('throw PluginError when find template type mismatch (string, [])', (done) => {
+    it('throws PluginError when find template type mismatch (string, [])', (done) => {
       const fakeFile = new File({
         path: 'dir/string.json',
         cwd: 'dir/',
@@ -200,7 +200,7 @@ describe('gulp-json-fsmap', () => {
       expectPluginError(fsmap(tmpl), done).end(fakeFile);
     });
 
-    it('throw PluginError when find template type mismatch (boolean, [])', (done) => {
+    it('throws PluginError when find template type mismatch (boolean, [])', (done) => {
       const fakeFile = new File({
         path: 'dir/boolean.json',
         cwd: 'dir/',
@@ -212,7 +212,7 @@ describe('gulp-json-fsmap', () => {
       expectPluginError(fsmap(tmpl), done).end(fakeFile);
     });
 
-    it('throw PluginError when find template type mismatch (null, [])', (done) => {
+    it('throws PluginError when find template type mismatch (null, [])', (done) => {
       const fakeFile = new File({
         path: 'dir/null.json',
         cwd: 'dir/',
@@ -224,7 +224,7 @@ describe('gulp-json-fsmap', () => {
       expectPluginError(fsmap(tmpl), done).end(fakeFile);
     });
 
-    it('throw PluginError when find template type mismatch ({}, [])', (done) => {
+    it('throws PluginError when find template type mismatch ({}, [])', (done) => {
       const fakeFile = new File({
         path: 'dir/object.json',
         cwd: 'dir/',
@@ -241,7 +241,7 @@ describe('gulp-json-fsmap', () => {
       expectPluginError(fsmap(tmpl), done).end(fakeFile);
     });
 
-    it('throw PluginError when find template type mismatch (number, {})', (done) => {
+    it('throws PluginError when find template type mismatch (number, {})', (done) => {
       const fakeFile = new File({
         path: 'dir/number.json',
         cwd: 'dir/',
@@ -252,7 +252,7 @@ describe('gulp-json-fsmap', () => {
       expectPluginError(fsmap(tmpl), done).end(fakeFile);
     });
 
-    it('throw PluginError when find template type mismatch (string, {})', (done) => {
+    it('throws PluginError when find template type mismatch (string, {})', (done) => {
       const fakeFile = new File({
         path: 'dir/string.json',
         cwd: 'dir/',
@@ -263,7 +263,7 @@ describe('gulp-json-fsmap', () => {
       expectPluginError(fsmap(tmpl), done).end(fakeFile);
     });
 
-    it('throw PluginError when find template type mismatch (boolean, {})', (done) => {
+    it('throws PluginError when find template type mismatch (boolean, {})', (done) => {
       const fakeFile = new File({
         path: 'dir/boolean.json',
         cwd: 'dir/',
@@ -274,7 +274,7 @@ describe('gulp-json-fsmap', () => {
       expectPluginError(fsmap(tmpl), done).end(fakeFile);
     });
 
-    it('throw PluginError when find template type mismatch (null, {})', (done) => {
+    it('throws PluginError when find template type mismatch (null, {})', (done) => {
       const fakeFile = new File({
         path: 'dir/null.json',
         cwd: 'dir/',
