@@ -2,7 +2,7 @@ const replacerSymbol = '%';
 const builtinReplacer = {
   i: (content, path) =>
     path[path.length - 1],
-  n: (context, path, iterationStart) =>
+  n: (context, path, iterationStart = 0) =>
     path[path.length - 1] - iterationStart,
 };
 
