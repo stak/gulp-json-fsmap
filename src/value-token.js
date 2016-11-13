@@ -102,7 +102,7 @@ export class ValueToken {
    */
   get isReplacer() {
     return typeof this._value === 'string' &&
-           (/\$\{[a-zA-Z_]+\}/).test(this._value);
+           (/%\{[a-zA-Z_]+\}/).test(this._value);
   }
 
   /**
