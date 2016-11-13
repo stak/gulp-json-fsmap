@@ -15,6 +15,9 @@ const builtinReplacer = {
  * @return {string} resolved value
  */
 function resolveReplacer(text, contexts, replacer) {
+  if (text.indexOf(replacerSymbol) < 0) {
+    return text;
+  }
   const mixedReplacer = Object.assign({}, builtinReplacer, replacer);
   const regexStr = `${replacerSymbol}\\{(${Object.keys(mixedReplacer).join('|')})\\}`;
   const re = new RegExp(regexStr, 'g');
