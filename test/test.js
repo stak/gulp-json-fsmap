@@ -383,4 +383,70 @@ describe('gulp-json-fsmap', () => {
       }).end(fakeFile);
     });
   });
+
+  describe('array spread syntax', () => {
+    it('captures the rest of Array elements', (done) => {
+      const fakeFile = new File({
+        path: 'dir/array.json',
+        cwd: 'dir/',
+        base: 'dir/',
+        contents: buffer([1, 2, 3, 4]),
+      });
+      const tmpl = ['i0', 'i1', '...REST'];
+
+      fsmap(tmpl).on('data', (newFile) => {
+        assertFile(newFile, fakeFile);
+        m.set(newFile.path, newFile.contents.toString());
+      }).on('end', () => {
+        assert(m.size === 3);
+        assert(m.get('dir/i0.json') === json(1));
+        assert(m.get('dir/i1.json') === json(2));
+        assert(m.get('dir/REST.json') === json([3, 4]));
+
+        done();
+      }).end(fakeFile);
+    });
+
+    it('captures empty Array if there is no element', (done) => {
+      const fakeFile = new File({
+        path: 'dir/array.json',
+        cwd: 'dir/',
+        base: 'dir/',
+        contents: buffer([1, 2]),
+      });
+      const tmpl = ['i0', 'i1', '...REST'];
+
+      fsmap(tmpl).on('data', (newFile) => {
+        assertFile(newFile, fakeFile);
+        m.set(newFile.path, newFile.contents.toString());
+      }).on('end', () => {
+        assert(m.size === 3);
+        assert(m.get('dir/i0.json') === json(1));
+        assert(m.get('dir/i1.json') === json(2));
+        assert(m.get('dir/REST.json') === json([]));
+
+        done();
+      }).end(fakeFile);
+    });
+
+    it('works with empty Array', (done) => {
+      const fakeFile = new File({
+        path: 'dir/emptyArray.json',
+        cwd: 'dir/',
+        base: 'dir/',
+        contents: buffer([]),
+      });
+      const tmpl = ['...REST'];
+
+      fsmap(tmpl).on('data', (newFile) => {
+        assertFile(newFile, fakeFile);
+        m.set(newFile.path, newFile.contents.toString());
+      }).on('end', () => {
+        assert(m.size === 1);
+        assert(m.get('dir/REST.json') === json([]));
+
+        done();
+      }).end(fakeFile);
+    });
+  });
 });
