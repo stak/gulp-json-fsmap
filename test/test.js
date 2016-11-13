@@ -343,4 +343,98 @@ describe('gulp-json-fsmap', () => {
                  .end(wrap(src));
     });
   });
+
+  describe('skip syntax', () => {
+    it('skips Array elements by specifing empty string', (done) => {
+      const src = [1, 2, 3, 4];
+      const tmpl = ['', 'i1', '', 'i3'];
+      const expected = {
+        i1: 2,
+        i3: 4,
+      };
+
+      fsmap(tmpl).on('data', collect)
+                 .on('end', expect(expected, done))
+                 .end(wrap(src));
+    });
+
+    it('skips Array element by specifing null or undefined', (done) => {
+      const src = [1, 2, 3, 4];
+      const tmpl = ['i0', undefined, 'i2', null];
+      const expected = {
+        i0: 1,
+        i2: 3,
+      };
+
+      fsmap(tmpl).on('data', collect)
+                 .on('end', expect(expected, done))
+                 .end(wrap(src));
+    });
+
+    it('skips Object properties by specifing empty string', (done) => {
+      const src = [1, 2, 3, 4];
+      const tmpl = ['', 'i1', '', 'i3'];
+      const expected = {
+        i1: 2,
+        i3: 4,
+      };
+
+      fsmap(tmpl).on('data', collect)
+                 .on('end', expect(expected, done))
+                 .end(wrap(src));
+    });
+
+    it('skips Object properties by specifing null or undefined', (done) => {
+      const src = {
+        a: true,
+        b: false,
+        c: null,
+      };
+      const tmpl = {
+        a: '',
+        b: '',
+        c: 'C',
+      };
+      const expected = {C: null};
+
+      fsmap(tmpl).on('data', collect)
+                 .on('end', expect(expected, done))
+                 .end(wrap(src));
+    });
+
+    it('ignores Error that corresponding Array element is undefined', (done) => {
+      const src = [1, 2];
+      const tmpl = ['i0', 'i1', '', '', ''];
+      const expected = {
+        i0: 1,
+        i1: 2,
+      };
+
+      fsmap(tmpl).on('data', collect)
+                 .on('end', expect(expected, done))
+                 .end(wrap(src));
+    });
+
+    it('ignores Error that corresponding Object property is undefined', (done) => {
+      const src = {
+        a: true,
+        b: false,
+        c: null,
+      };
+      const tmpl = {
+        a: 'A',
+        b: '',
+        c: 'C',
+        x: '',
+      };
+      const expected = {
+        A: true,
+        C: null,
+      };
+
+      fsmap(tmpl).on('data', collect)
+                 .on('end', expect(expected, done))
+                 .end(wrap(src));
+    });
+  });
 });
