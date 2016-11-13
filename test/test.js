@@ -196,7 +196,7 @@ describe('gulp-json-fsmap', () => {
       expectPluginError(fsmap(tmpl), done).end(wrap(null));
     });
 
-    it('throw PluginError when find template type mismatch ([], {})', (done) => {
+    it('throws PluginError when find template type mismatch ([], {})', (done) => {
       const src = [1, 2, 3];
       const tmpl = {0: 'expect_object'};
       expectPluginError(fsmap(tmpl), done).end(wrap(src));
@@ -232,7 +232,7 @@ describe('gulp-json-fsmap', () => {
                  .end(wrap(src));
     });
 
-    it('captures empty object if all keys are specified explicitly', (done) => {
+    it('captures empty Object if all keys are specified explicitly', (done) => {
       const src = {
         a: 1,
         b: 10,
@@ -253,7 +253,7 @@ describe('gulp-json-fsmap', () => {
                  .end(wrap(src));
     });
 
-    it('works with empty object', (done) => {
+    it('works on empty Object', (done) => {
       const src = {};
       const tmpl = {_: 'REST'};
       const expected = {REST: {}};
@@ -293,7 +293,7 @@ describe('gulp-json-fsmap', () => {
                  .end(wrap(src));
     });
 
-    it('works with empty Array', (done) => {
+    it('works on empty Array', (done) => {
       const src = [];
       const tmpl = ['...REST'];
       const expected = {REST: []};
@@ -333,7 +333,7 @@ describe('gulp-json-fsmap', () => {
                  .end(wrap(src));
     });
 
-    it('works with empty Array', (done) => {
+    it('works on empty Array', (done) => {
       const src = [];
       const tmpl = ['*REST%{i}'];
       const expected = {};
