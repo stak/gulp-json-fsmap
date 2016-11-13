@@ -296,4 +296,91 @@ describe('gulp-json-fsmap', () => {
       expectPluginError(fsmap(tmpl), done).end(fakeFile);
     });
   });
+
+  describe('rest key syntax', () => {
+    it('captures all keys which is not specified explicitly', (done) => {
+      const fakeFile = new File({
+        path: 'dir/object.json',
+        cwd: 'dir/',
+        base: 'dir/',
+        contents: buffer({
+          a: 1,
+          b: 10,
+          c: -20,
+          d: 999,
+          e: 0,
+        }),
+      });
+      const tmpl = {
+        a: 'A',
+        e: 'E',
+        _: 'REST',
+      };
+
+      fsmap(tmpl).on('data', (newFile) => {
+        assertFile(newFile, fakeFile);
+        m.set(newFile.path, newFile.contents.toString());
+      }).on('end', () => {
+        assert(m.size === 3);
+        assert(m.get('dir/A.json') === json(1));
+        assert(m.get('dir/E.json') === json(0));
+        assert(m.get('dir/REST.json') === json({
+          b: 10,
+          c: -20,
+          d: 999,
+        }));
+
+        done();
+      }).end(fakeFile);
+    });
+
+    it('captures empty object if all keys are specified explicitly', (done) => {
+      const fakeFile = new File({
+        path: 'dir/object.json',
+        cwd: 'dir/',
+        base: 'dir/',
+        contents: buffer({
+          a: 1,
+          b: 10,
+        }),
+      });
+      const tmpl = {
+        a: 'A',
+        b: 'B',
+        _: 'REST',
+      };
+
+      fsmap(tmpl).on('data', (newFile) => {
+        assertFile(newFile, fakeFile);
+        m.set(newFile.path, newFile.contents.toString());
+      }).on('end', () => {
+        assert(m.size === 3);
+        assert(m.get('dir/A.json') === json(1));
+        assert(m.get('dir/B.json') === json(10));
+        assert(m.get('dir/REST.json') === json({}));
+
+        done();
+      }).end(fakeFile);
+    });
+
+    it('works with empty object', (done) => {
+      const fakeFile = new File({
+        path: 'dir/empty.json',
+        cwd: 'dir/',
+        base: 'dir/',
+        contents: buffer({}),
+      });
+      const tmpl = {_: 'REST'};
+
+      fsmap(tmpl).on('data', (newFile) => {
+        assertFile(newFile, fakeFile);
+        m.set(newFile.path, newFile.contents.toString());
+      }).on('end', () => {
+        assert(m.size === 1);
+        assert(m.get('dir/REST.json') === json({}));
+
+        done();
+      }).end(fakeFile);
+    });
+  });
 });
