@@ -1,3 +1,4 @@
+const replacerSymbol = '%';
 const builtinReplacer = {
   i: (content, path) =>
     path[path.length - 1],
@@ -15,7 +16,7 @@ const builtinReplacer = {
  */
 function resolveReplacer(text, contexts, replacer) {
   const mixedReplacer = Object.assign({}, builtinReplacer, replacer);
-  const regexStr = `\\$\\{(${Object.keys(mixedReplacer).join('|')})\\}`;
+  const regexStr = `${replacerSymbol}\\{(${Object.keys(mixedReplacer).join('|')})\\}`;
   const re = new RegExp(regexStr, 'g');
   const f = (_, name) => mixedReplacer[name](...contexts);
 
