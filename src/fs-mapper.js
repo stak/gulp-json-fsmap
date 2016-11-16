@@ -2,7 +2,6 @@ import traverse from 'traverse';
 import {err, zip} from './util.js';
 import kToken from './key-token';
 import vToken from './value-token';
-import resolveReplacer from './replacer';
 
 export default class FsMapper {
   /**
@@ -48,12 +47,11 @@ export default class FsMapper {
    * match template with src and return mapping definition
    * @access public
    * @param {any} src - specify source object (or primitive value) to map
-   * @param {object} replacer - specify replace functions by key-value object
    * @param {function(string)} onError - specify onError callback function
    * @throws {PluginError} throw gutil.PluginError, expecting to catch and emit error event
    * @return {Map<string, any>} mapping definition (path => value)
    */
-  match(src, replacer, onError) {
+  match(src, onError) {
     const travSrc = traverse(src);
 
     const availableNode = ([pathToken, nodeToken]) => {
@@ -97,29 +95,30 @@ export default class FsMapper {
         if (!sliced.length) {
           return null;  // nothing to iterate
         }
-        return sliced.map((e, i) => {
-          const iteratePath = [...p, sliceIndex + i];
-          const fileContent = e;
-          const filePath = resolveReplacer(nodeToken.name,
-                                           [fileContent, iteratePath, sliceIndex],
-                                           replacer);
-          return [filePath, fileContent];
-        });
+        return sliced.map((e, i) =>
+          [p.join('/') + String(sliceIndex + i), {
+            name: nodeToken.name,
+            body: e,
+            path: [...p, sliceIndex + i],
+            iterationIndex: sliceIndex,
+          }]
+        );
       } else {
-        let fileContent;
+        let fileContents;
         if (pathToken.isObjectRest) {
           p.pop();
-          fileContent = this._getUnmapped(travSrc, p);
+          fileContents = this._getUnmapped(travSrc, p);
         } else if (nodeToken.isArraySpread) {
-          fileContent = sliceParent(p)[0];
+          fileContents = sliceParent(p)[0];
         } else {
-          fileContent = travSrc.get(p);
+          fileContents = travSrc.get(p);
         }
 
-        const filePath = resolveReplacer(nodeToken.name,
-                                        [fileContent, pathToken.path],
-                                        replacer);
-        return [filePath, fileContent];
+        return [pathToken.path.join('/'), {
+          name: nodeToken.name,
+          body: fileContents,
+          path: pathToken.path,
+        }];
       }
     };
 

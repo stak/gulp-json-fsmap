@@ -4,6 +4,7 @@ import path from 'path';
 import detectIndent from 'detect-indent';
 
 import FsMapper from './fs-mapper';
+import resolveReplacer from './replacer';
 import {err} from './util';
 
 // shorthands
@@ -60,16 +61,17 @@ export default function gulpJsonFsMap(template, {
       };
 
       // core logic
-      const fsmap = mapper.match(JSON.parse(json), replacer, onError);
-      for (const [targetPath, contents] of fsmap) {
+      const fsmap = mapper.match(JSON.parse(json), onError);
+      for (const [, context] of fsmap) {
+        const resolvedName = resolveReplacer(context.name, context, replacer);
         const dirName = mkdir ? ext(path.basename(file.path), '') : '';
-        const targetPathWithExt = extension ? ext(targetPath, `.${extension}`) : targetPath;
+        const targetPathWithExt = extension ? ext(resolvedName, `.${extension}`) : resolvedName;
 
         this.push(new File({
           base: file.base,
           cwd: file.cwd,
           path: path.join(file.base, dirName, targetPathWithExt),
-          contents: new Buffer(stringify(contents)),
+          contents: new Buffer(stringify(context.body)),
         }));
       }
     } catch (e) {

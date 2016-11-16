@@ -488,7 +488,7 @@ describe('gulp-json-fsmap', () => {
         bb: {id: 'b'},
         cc: {id: 'c'},
       };
-      const opts = {replacer: {twiceId: (obj) => obj.id + obj.id}};
+      const opts = {replacer: {twiceId: ($) => $.body.id + $.body.id}};
 
       fsmap(tmpl, opts).on('data', collect)
                        .on('end', expect(expected, done))
