@@ -99,7 +99,7 @@ export default class FsMapper {
           [p.join('/') + String(sliceIndex + i), {
             name: nodeToken.name,
             body: e,
-            path: [...p, sliceIndex + i],
+            pos: [...p, sliceIndex + i],
             iterationIndex: sliceIndex,
           }]
         );
@@ -117,7 +117,7 @@ export default class FsMapper {
         return [pathToken.path.join('/'), {
           name: nodeToken.name,
           body: fileContents,
-          path: pathToken.path,
+          pos: pathToken.path,
         }];
       }
     };

@@ -1,9 +1,9 @@
 const replacerSymbol = '%';
 const builtinReplacer = {
   i: ($) =>
-    $.path[$.path.length - 1],
+    $.pos[$.pos.length - 1],
   n: ($) =>
-    $.path[$.path.length - 1] - ($.iterationIndex || 0),
+    $.pos[$.pos.length - 1] - ($.iterationIndex || 0),
 };
 
 /**
