@@ -7,7 +7,7 @@ const builtinReplacer = {
   n: ($) =>
     $.pos[$.pos.length - 1] - ($.iterationIndex || 0),
   basename: ($) =>
-    path.basename($.path),
+    path.basename($.path, path.extname($.path)),
 };
 
 /**
