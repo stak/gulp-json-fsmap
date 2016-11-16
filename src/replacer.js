@@ -1,9 +1,13 @@
+import path from 'path';
+
 const replacerSymbol = '%';
 const builtinReplacer = {
   i: ($) =>
     $.pos[$.pos.length - 1],
   n: ($) =>
     $.pos[$.pos.length - 1] - ($.iterationIndex || 0),
+  basename: ($) =>
+    path.basename($.path),
 };
 
 /**

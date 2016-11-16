@@ -467,6 +467,16 @@ describe('gulp-json-fsmap', () => {
                  .end(wrap(src));
     });
 
+    it('replaces %{basename} with basename of the src', (done) => {
+      const src = ['this Vinyl objects is from dir/test.json'];
+      const tmpl = ['%{basename}'];
+      const expected = {test: 'this Vinyl objects is from dir/test.json'};
+
+      fsmap(tmpl).on('data', collect)
+                 .on('end', expect(expected, done))
+                 .end(wrap(src));
+    });
+
     it('skips invalid placeholder', (done) => {
       const src = [1, 2, 3];
       const tmpl = ['head', '*rest%{skipme}'];

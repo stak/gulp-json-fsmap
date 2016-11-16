@@ -63,6 +63,7 @@ export default function gulpJsonFsMap(template, {
       // core logic
       const fsmap = mapper.match(JSON.parse(json), onError);
       for (const [, context] of fsmap) {
+        context.path = file.path;
         const resolvedName = resolveReplacer(context.name, context, replacer);
         const outputDir = mkdir ? ext(path.basename(file.path), '') : '';
         const outputPath = extension ? ext(resolvedName, `.${extension}`) : resolvedName;
