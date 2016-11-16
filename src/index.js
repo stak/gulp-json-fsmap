@@ -64,13 +64,13 @@ export default function gulpJsonFsMap(template, {
       const fsmap = mapper.match(JSON.parse(json), onError);
       for (const [, context] of fsmap) {
         const resolvedName = resolveReplacer(context.name, context, replacer);
-        const dirName = mkdir ? ext(path.basename(file.path), '') : '';
-        const targetPathWithExt = extension ? ext(resolvedName, `.${extension}`) : resolvedName;
+        const outputDir = mkdir ? ext(path.basename(file.path), '') : '';
+        const outputPath = extension ? ext(resolvedName, `.${extension}`) : resolvedName;
 
         this.push(new File({
           base: file.base,
           cwd: file.cwd,
-          path: path.join(file.base, dirName, targetPathWithExt),
+          path: path.join(file.base, outputDir, outputPath),
           contents: new Buffer(stringify(context.body)),
         }));
       }
