@@ -4,6 +4,7 @@ import path from 'path';
 import detectIndent from 'detect-indent';
 
 import FsMapper from './fs-mapper';
+import JsonMapper from './json-mapper';
 import resolveReplacer from './replacer';
 import {err} from './util';
 
@@ -23,7 +24,7 @@ const PluginError = gutil.PluginError;
  * @throws {PluginError} throw PluginError only when called with invalid parameters
  * @return {Transform} stream in object mode to handle vinyl File objects
  */
-export default function gulpJsonFsMap(template, {
+function gulpJsonFsSplit(template, {
   extension = 'json',
   indent = null,
   mkdir = false,
@@ -88,3 +89,82 @@ export default function gulpJsonFsMap(template, {
 
   return through.obj(transform);
 }
+
+/**
+ * gulp plugin main function
+ * @param {object|string} template - specify template to define mapping
+ * @param {?string} [extension='json'] - specify extension to detect
+ * @param {string|number} [indent=null] - specify indent style of output json
+ * @param {boolean} [ignoreUnmatch=false] - specify true to ignore error in matching
+ * @param {object} [parser={}] - specify placeholder parser functions by key-value object
+ * @throws {PluginError} throw PluginError only when called with invalid parameters
+ * @return {Transform} stream in object mode to handle vinyl File objects
+ */
+function gulpJsonFsJoin(template, {
+  extension = 'json',
+  indent = null,
+  ignoreUnmatch = false,
+  parser = {},
+} = {}) {
+  const mapper = new JsonMapper(template);
+
+  /**
+   * handler for each File
+   * @param {File} file - File object to handle
+   * @param {string} enc - encoding, but it is ignored if file contains a Buffer
+   * @param {function(Error, File)} done - callback function
+   * @this Transform
+   */
+  function transform(file, enc, done) {
+    if (file.isNull()) {
+      return done(null, file);  // ignore empty file
+    } else if (file.isStream()) {
+      return done(err('Streaming is not supported'));
+    } else if (!file.isBuffer()) {
+      return done(err('Unknown Vinyl type'));
+    }
+
+    try {
+      const onError = (msg) => {
+        if (!ignoreUnmatch) {
+          throw err(msg);
+        }
+      };
+
+      // core logic
+      mapper.match(file, onError);
+    } catch (e) {
+      // emit exception as an error event
+      if (e instanceof PluginError) {
+        done(e);
+      } else {
+        done(err(e));
+      }
+    }
+    return done();
+  }
+
+  /**
+   * handler to flush current stream
+   * @param {function(Error, File)} done - callback function
+   * @this Transform
+   */
+  function flush(done) {
+    const result = mapper.build((msg) => {
+      done(err(msg)); // onError
+    });
+
+    this.push(new File({
+      path: '',
+      contents: new Buffer(stringify(result)),
+    }));
+    done();
+  }
+
+  return through.obj(transform, flush);
+}
+
+export default {
+  split: gulpJsonFsSplit,
+  join: gulpJsonFsJoin,
+};
