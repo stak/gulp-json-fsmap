@@ -47,7 +47,7 @@ describe('gulp-json-fsmap', () => {
       if (err.plugin === PLUGIN_NAME) {
         done();
       }
-    }).on('data', () => {
+    }).on('end', () => {
       if (!reported) {
         done(new Error('fail'));
         reported = true;
