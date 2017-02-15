@@ -1,4 +1,5 @@
 import traverse from 'traverse';
+import path from 'path';
 import {err, zip} from './util.js';
 import kToken from './key-token';
 import vToken from './value-token';
@@ -9,7 +10,7 @@ export default class JsonMapper {
    * @param {object|string} template - specify object to define mapping
    * @throws {PluginError} throw gutil.PluginError when parameter is invalid
    */
-  constructor(template) {
+  constructor(template, parser, extension) {
     // input guards
     if (!template) {
       throw err('Missing template object');
@@ -18,6 +19,9 @@ export default class JsonMapper {
     }
 
     this.travTemplate = traverse(template);
+
+    this._autoExt = extension;
+    this._parser = parser;
     this._makeDictionary();
   }
 
@@ -45,9 +49,6 @@ export default class JsonMapper {
   }
 
   _makeDictionary() {
-    // traverse してファイルパスからオブジェクトパスへ変換する Map を作る
-    // placeholder 含まれている場合は正規表現をリストにしておいてどうにか
-    // さらに、Normal、ObjRest, ArrayRest, ArrayIterate の区分も保存する
     const pairs = zip(this.travTemplate.paths(), this.travTemplate.nodes())
                   .map(([k, v]) => [kToken(k), vToken(v)]);
     const toKeyValue = ([k, v]) => [v.name,
@@ -56,19 +57,31 @@ export default class JsonMapper {
         isArraySpread: v.isArraySpread,
         isArrayIterate: v.isArrayIterate,
         isObjectRest: k.isObjectRest,
+        matched: false,
+        contents: null,
       },
     ];
     const staticKeyValues = pairs.filter(([, v]) => v.name && !v.isReplacer)
                                  .map(toKeyValue);
-    this.staticMap = new Map(staticKeyValues);
-    this.dynamicKeyValues = pairs.filter(([, v]) => v.name && v.isReplacer)
-                                 .map(toKeyValue);
+    this._staticMap = new Map(staticKeyValues);
+    this._dynamicKeyValues = pairs.filter(([, v]) => v.name && v.isReplacer)
+                                  .map(toKeyValue)
+                                  .map(([name, obj]) => [this._makeRegex(name), obj]);
+  }
+
+  _makeRegex(name) {
+    return name; // TODO:
   }
 
   match(file, onError) {
     // Plugin の Stream に file が届くたびに呼ばれる
     // 事前に作った辞書と照らしてマッチするか調べ、
     // マッチするなら file.contents をキャプチャしておく
+    const relativePath = path.relative(file.base, file.path);
+    const mapping = this._staticMap.get(relativePath) ||
+                    this._staticMap.get(path.basename(relativePath, this._autoExt));
+    mapping.matched = true;
+    mapping.contents = file.contents;
   }
 
   build(onError) {

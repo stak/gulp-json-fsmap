@@ -106,7 +106,11 @@ function gulpJsonFsJoin(template, {
   ignoreUnmatch = false,
   parser = {},
 } = {}) {
-  const mapper = new JsonMapper(template);
+  const mapper = new JsonMapper(template, parser, extension);
+
+  let indentStr = indent !== null ?
+                  indent : '';
+  const stringify = (obj) => JSON.stringify(obj, null, indentStr);
 
   /**
    * handler for each File
@@ -132,7 +136,12 @@ function gulpJsonFsJoin(template, {
       };
 
       // core logic
-      mapper.match(file, onError);
+      const fileIsUsed = mapper.match(file, onError);
+
+      if (fileIsUsed && !indentStr) {
+        const json = file.contents.toString('utf8');
+        indentStr = detectIndent(json).indent;
+      }
     } catch (e) {
       // emit exception as an error event
       if (e instanceof PluginError) {
